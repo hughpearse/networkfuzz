@@ -1,6 +1,6 @@
 #!/bin/python
 
-import sys, getopt
+import sys, getopt, os
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
@@ -16,18 +16,15 @@ from scapy.utils import rdpcap
 from scapy.layers.inet import IP,UDP,TCP
 from scapy.packet import Raw
 
-def shuffle(x):
-    x = list(x)
-    random.shuffle(x)
-    return x
-
 def main(argv):
 	inputfile = ''
 	outputfile = ''
+	hookfile = ''
 	try:
-		opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
+		opts, args = getopt.getopt(argv,"hi:o:t:",["ifile=","ofile=","transformation="])
 	except getopt.GetoptError:
-		print 'test.py -i <inputfile> -o <outputfile>'
+		print sys.argv[0] + ' -i inputfile -o outputfile -t [hook script]'
+		print sys.argv[0] + ' -i sample.pcap -o result.pcap -t example'
 		sys.exit(2)
 	for opt, arg in opts:
 		if opt == '-h':
@@ -37,8 +34,8 @@ def main(argv):
 			inputfile = arg
 		elif opt in ("-o", "--ofile"):
 			outputfile = arg
-	#print 'Input file is: ', inputfile
-	#print 'Output file is: ', outputfile
+		elif opt in ("-t", "--transformation"):
+			hookfile = arg
 
 	pkts=rdpcap(inputfile)
 	for pkt in pkts:
@@ -51,8 +48,10 @@ def main(argv):
 		    for d in str(pkt.getlayer(UDP).payload):
 		        my_array.append(d)
 		
-		#fuzzing framework goes here
-		data = shuffle(my_array)
+		modname = "hooks." + hookfile
+		module = __import__(modname, globals(), locals(), ['modify_payload'])
+		func = getattr(module, "modify_payload")
+		data = func(my_array)
 		str1 = ''.join(data)
 		
 		#replace payload in origional packet
@@ -63,11 +62,7 @@ def main(argv):
 		    
 	    except:
 		raise
-	    
 	wrpcap(outputfile, pkts)
 
 total = len(sys.argv)
-if len (sys.argv) != 5 :
-	print sys.argv[0] + ' -i <inputfile> -o <outputfile>'
-	sys.exit(2)
 main(sys.argv[1:])
