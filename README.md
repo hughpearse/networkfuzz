@@ -12,6 +12,6 @@ When other network fuzzers do modify the TCP/UDP payload, they tend to require t
 This program solves these 2 problems by fuzzing the payload data in a Pcap file and writing the fuzzed Pcap file out to disk. The new modified Pcap can then be replayed using tcpreplay.
 
 **Example Usage:**
-- ./RUN.sh -i sample.pcap -o ./result.pcap
+- ./RUN.sh -i sample.pcap -o ./result.pcap -t data-transformation-python-module
 - sudo tcpreplay -i em1 ./result.pcap
 
