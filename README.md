@@ -1,4 +1,4 @@
-fuzzmybox
+networkfuzz
 =========
 
 Description:
